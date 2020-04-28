@@ -1,7 +1,8 @@
 *.pyc
 data/
 __pycache__/
-checkpoints/
+checkpoints*/
+runs*/
 *.pth
 *.jpg
 SUBMISSION*

@@ -16,9 +16,9 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset
 from torch.utils.data import DataLoader, random_split
 
-dir_img = 'data/imgs/'
-dir_mask = 'data/masks/'
-dir_checkpoint = 'checkpoints/'
+dir_img = '/UNet/data/training/image/'
+dir_mask ='/UNet/data/training/semantic_rgb/'
+dir_checkpoint = '/UNet/src/checkpoints/'
 
 
 def train_net(net,
@@ -51,12 +51,14 @@ def train_net(net,
         Images scaling:  {img_scale}
     ''')
 
-    optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min' if net.n_classes > 1 else 'max', patience=2)
+    optimizer = optim.Adam(net.parameters(), lr=lr)
+#    optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
+#    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min' if net.n_classes > 1 else 'max', patience=2)
     if net.n_classes > 1:
         criterion = nn.CrossEntropyLoss()
     else:
         criterion = nn.BCEWithLogitsLoss()
+#    criterion = nn.BCELoss()
 
     for epoch in range(epochs):
         net.train()
@@ -76,9 +78,14 @@ def train_net(net,
                 true_masks = true_masks.to(device=device, dtype=mask_type)
 
                 masks_pred = net(imgs)
-                loss = criterion(masks_pred, true_masks)
+                
+                # Modified
+                # masks_pred = masks_pred.squeeze(dim=1)
+                #print(masks_pred.shape)
+                #print(true_masks.shape)
+                loss = criterion(masks_pred, true_masks.squeeze(dim=1))
                 epoch_loss += loss.item()
-                writer.add_scalar('Loss/train', loss.item(), global_step)
+                writer.add_scalar('Loss/train_batch', loss.item(), global_step)
 
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
 
@@ -95,20 +102,22 @@ def train_net(net,
                         writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step)
                         writer.add_histogram('grads/' + tag, value.grad.data.cpu().numpy(), global_step)
                     val_score = eval_net(net, val_loader, device)
-                    scheduler.step(val_score)
+                    #scheduler.step(val_score)
                     writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step)
 
                     if net.n_classes > 1:
                         logging.info('Validation cross entropy: {}'.format(val_score))
-                        writer.add_scalar('Loss/test', val_score, global_step)
+                        writer.add_scalar('Loss/validation', val_score, global_step)
                     else:
                         logging.info('Validation Dice Coeff: {}'.format(val_score))
-                        writer.add_scalar('Dice/test', val_score, global_step)
+                        writer.add_scalar('Dice/validation', val_score, global_step)
 
                     writer.add_images('images', imgs, global_step)
                     if net.n_classes == 1:
                         writer.add_images('masks/true', true_masks, global_step)
                         writer.add_images('masks/pred', torch.sigmoid(masks_pred) > 0.5, global_step)
+
+        writer.add_scalar('Loss/train_epoch', epoch_loss, epoch)
 
         if save_cp:
             try:
@@ -130,11 +139,11 @@ def get_args():
                         help='Number of epochs', dest='epochs')
     parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=1,
                         help='Batch size', dest='batchsize')
-    parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.1,
+    parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.001,
                         help='Learning rate', dest='lr')
     parser.add_argument('-f', '--load', dest='load', type=str, default=False,
                         help='Load model from a .pth file')
-    parser.add_argument('-s', '--scale', dest='scale', type=float, default=0.5,
+    parser.add_argument('-s', '--scale', dest='scale', type=float, default=1.0,
                         help='Downscaling factor of the images')
     parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
@@ -154,7 +163,7 @@ if __name__ == '__main__':
     #   - For 1 class and background, use n_classes=1
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
-    net = UNet(n_channels=3, n_classes=1, bilinear=True)
+    net = UNet(n_channels=3, n_classes=28, bilinear=True)
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
                  f'\t{net.n_classes} output channels (classes)\n'

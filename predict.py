@@ -17,36 +17,55 @@ def predict_img(net,
                 full_img,
                 device,
                 scale_factor=1,
-                out_threshold=0.5):
+                out_threshold=0):
     net.eval()
 
-    img = torch.from_numpy(BasicDataset.preprocess(full_img, scale_factor))
+    img = torch.from_numpy(BasicDataset.preprocess_image(full_img, scale_factor))
 
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
         output = net(img)
+        print("Output:")
+        print(output.shape)
+        print(torch.max(output))
+        print(torch.min(output))
 
         if net.n_classes > 1:
             probs = F.softmax(output, dim=1)
         else:
             probs = torch.sigmoid(output)
-
+        
+        print("Softmax:")
+        print(probs.shape)
+        print(torch.max(probs))
+        print(torch.min(probs))
+        probs = torch.argmax(probs, dim=1)
         probs = probs.squeeze(0)
+        
+        print("Argmax:")
+        print(probs.shape)
+        print(torch.max(probs))
+        print(torch.min(probs))
 
-        tf = transforms.Compose(
-            [
-                transforms.ToPILImage(),
-                transforms.Resize(full_img.size[1]),
-                transforms.ToTensor()
-            ]
-        )
+        #tf = transforms.Compose(
+        #   [
+        #        transforms.ToPILImage(),
+        #        transforms.Resize(full_img.size[1]),
+        #        transforms.ToTensor()
+        #    ]
+        #)
 
-        probs = tf(probs.cpu())
+        #probs = tf(probs.cpu())
+        #print("Transform:")
+        #print(probs.shape)
+        #print(torch.max(probs))
+        #print(torch.min(probs))
         full_mask = probs.squeeze().cpu().numpy()
+        #print(probs.shape)
 
-    return full_mask > out_threshold
+    return full_mask #> out_threshold
 
 
 def get_args():
@@ -94,7 +113,42 @@ def get_output_filenames(args):
 
 
 def mask_to_image(mask):
-    return Image.fromarray((mask * 255).astype(np.uint8))
+    #return Image.fromarray((mask / 18 * 255).astype(np.uint8))
+    labels = {
+            0  : [  0,  0,  0],
+            1  : [128, 64,128],
+            2  : [244, 35,232],
+            3  : [250,170,160],
+            4  : [230,150,140],
+            5  : [ 70, 70, 70],
+            6  : [102,102,156],
+            7  : [190,153,153],
+            8  : [180,165,180],
+            9  : [150,100,100],
+            10 : [150,120, 90],
+            11 : [153,153,153],
+            12 : [153,153,153],
+            13 : [250,170, 30],
+            14 : [220,220,  0],
+            15 : [107,142, 35],
+            16 : [152,251,152],
+            17 : [ 70,130,180],
+            18 : [255,  0,  0],
+            19 : [  0,  0,142],
+            20 : [  0,  0, 70],
+            21 : [  0, 60,100],
+            22 : [  0,  0, 90],
+            23 : [  0,  0,110],
+            24 : [  0, 80,100],
+            25 : [  0,  0,230],
+            26 : [119, 11, 32],
+            27 : [  0,  0,142]
+        }
+    pred_img = np.zeros((mask.shape[0], mask.shape[1], 3))
+    for x in range(mask.shape[0]):
+        for y in range(mask.shape[1]):
+            pred_img[x,y,:] = labels[mask[x,y]]
+    return Image.fromarray(pred_img.astype(np.uint8))     
 
 
 if __name__ == "__main__":
@@ -102,7 +156,7 @@ if __name__ == "__main__":
     in_files = args.input
     out_files = get_output_filenames(args)
 
-    net = UNet(n_channels=3, n_classes=1)
+    net = UNet(n_channels=3, n_classes=28)
 
     logging.info("Loading model {}".format(args.model))
 
@@ -116,7 +170,7 @@ if __name__ == "__main__":
     for i, fn in enumerate(in_files):
         logging.info("\nPredicting image {} ...".format(fn))
 
-        img = Image.open(fn)
+        img = np.array(Image.open(fn))
 
         mask = predict_img(net=net,
                            full_img=img,
