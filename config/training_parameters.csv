@@ -1,0 +1,6 @@
+OPTIMIZER,LR,LOSS,EPOCHS,BATCH,CP_PATH
+adam,0.001,cross_entropy,25,2,ad_0.001_ce_25_2
+adam,0.005,cross_entropy,25,2,ad_0.005_ce_25_2
+adam,0.01,cross_entropy,25,2,ad_0.01_ce_25_2
+adam,0.05,cross_entropy,25,2,ad_0.05_ce_25_2
+adam,0.1,cross_entropy,25,2,ad_0.1_ce_25_2
