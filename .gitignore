@@ -1,5 +1,6 @@
 *.pyc
 data/
+*.keep
 __pycache__/
 checkpoints*/
 runs*/
