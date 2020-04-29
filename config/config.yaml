@@ -1,10 +1,34 @@
-#UNet config file
+#UNet config file for KITTI dataset
 
-input:
-    channels: 3
+network:
+    input:
+        channels : 3
+    output:
+        channels : 29
 
-output:
-    channels: 29
+training:
+    image:
+        path       : /UNet/data/training/image/
+        height     : 360
+        width      : 1024
+
+    mask:
+        path       : /UNet/data/training/semantic_rgb/
+
+    checkpoint: 
+        save       : True
+        path       : /UNet/src/checkpoints/
+
+    pretrained: 
+        flag       : False
+        path       : 
+
+    validation:
+        flag       : True
+        percentage : 10
+        
+        
+class:
     labels:
         0  : unknown
         1  : road
@@ -16,7 +40,7 @@ output:
         7  : fence
         8  : guard rail
         9  : bridge
-        10  : tunnel
+        10 : tunnel
         11 : pole
         12 : polegroup
         13 : traffic light

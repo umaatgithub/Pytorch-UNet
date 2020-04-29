@@ -9,9 +9,9 @@ data = yaml.load(config_file)
 
 if __name__ == "__main__":
 
-    print('Input channels : ', data['input']['channels'])
+    print('Input channels : ', data['network']['input']['channels'])
 
-    print('Output channels : ', data['output']['channels'])
-    print('Output label 1 : ',data['output']['labels'][0])
-    print('Output color 1 : ',data['output']['colors'][0])
+    print('Output channels : ', data['network']['output']['channels'])
+    print('Output label 1 : ', data['class']['labels'][0])
+    print('Output color 1 : ', data['class']['colors'][0])
 
