@@ -1,0 +1,88 @@
+#UNet config file for KITTI dataset
+
+network:
+    input:
+        channels : 3
+    output:
+        channels : 24
+
+training:
+    image:
+        path       : /UNet/data/training_set_processed/images/
+        pre_path   : /UNet/data/training_set_processed/preprocessed_images/
+        height     : 1024
+        width      : 1024
+
+    mask:
+        path       : /UNet/data/training_set_processed/gt/semantic/label_images/
+        pre_path   : /UNet/data/training_set_processed/gt/semantic/preprocessed_label_images/
+
+    preprocess:
+        flag       : True
+
+    checkpoint: 
+        flag       : True
+        path       : /UNet/src/checkpoints/
+
+    pretrained: 
+        flag       : False
+        path       : 
+
+    validation:
+        flag       : True
+        percentage : 10
+        
+        
+class:
+    size: 24
+    labels:
+        0  : unlabeled
+        1  : paved-area         # purple
+        2  : dirt               # light brown
+        3  : grass              # green
+        4  : gravel             # dark gray(cement)
+        5  : water
+        6  : rocks              # darker gray
+        7  : pool
+        8  : vegetation         # light green
+        9  : roof               # gray
+        10 : wall
+        11 : window
+        12 : door
+        13 : fence
+        14 : fence-pole
+        15 : person             # pink
+        16 : dog
+        17 : car
+        18 : bicycle
+        19 : tree               # dark green
+        20 : bald-tree          # lighter green
+        21 : ar-marker
+        22 : obstacle
+        23 : conflicting
+    colors:
+        0  : [   0,   0,   0 ]
+        1  : [ 128,  64, 128 ]
+        2  : [ 130,  76,   0 ]
+        3  : [   0, 102,   0 ]
+        4  : [ 112, 103,  87 ]
+        5  : [  28,  42, 168 ]
+        6  : [  48,  41,  30 ]
+        7  : [   0,  50,  89 ]
+        8  : [ 107, 142,  35 ]
+        9  : [  70,  70,  70 ]
+        10 : [ 102, 102, 156 ]
+        11 : [ 254, 228,  12 ]
+        12 : [ 254, 148,  12 ]
+        13 : [ 190, 153, 153 ]
+        14 : [ 153, 153, 153 ]
+        15 : [ 255,  22,  96 ]
+        16 : [ 102,  51,   0 ]
+        17 : [   9, 143, 150 ]
+        18 : [ 119,  11,  32 ]
+        19 : [  51,  51,   0 ]
+        20 : [ 190, 250, 190 ]
+        21 : [ 112, 150, 146 ]
+        22 : [   2, 135, 115 ]
+        23 : [ 255,   0,   0 ]
+    weights: []
