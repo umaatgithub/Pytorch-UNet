@@ -9,14 +9,19 @@ network:
 training:
     image:
         path       : /UNet/data/training/image/
+        pre_path   : /UNet/data/training/preprocessed_image/
         height     : 360
         width      : 1024
 
     mask:
         path       : /UNet/data/training/semantic_rgb/
+        pre_path   : /UNet/data/training/preprocessed_semantic_rgb/
+
+    preprocess:
+        flag       : True
 
     checkpoint: 
-        save       : True
+        flag       : True
         path       : /UNet/src/checkpoints/
 
     pretrained: 
@@ -29,6 +34,7 @@ training:
         
         
 class:
+    size: 29
     labels:
         0  : unknown
         1  : road

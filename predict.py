@@ -11,6 +11,7 @@ from torchvision import transforms
 from unet import UNet
 from utils.data_vis import plot_img_and_mask
 from utils.dataset import BasicDataset
+from utils.load_config import data
 
 
 def predict_img(net,
@@ -20,7 +21,10 @@ def predict_img(net,
                 out_threshold=0):
     net.eval()
 
-    img = torch.from_numpy(BasicDataset.preprocess_image(full_img, scale_factor))
+    if data['training']['preprocess']['flag']:
+        img = torch.from_numpy(BasicDataset.preprocess_image(full_img, scale_factor))
+    else:
+        img = torch.from_numpy(full_img)
 
     img = img.unsqueeze(0)
     img = img.to(device=device, dtype=torch.float32)
@@ -102,7 +106,10 @@ def get_output_filenames(args):
     if not args.output:
         for f in in_files:
             pathsplit = os.path.splitext(f)
-            out_files.append("{}_OUT{}".format(pathsplit[0], pathsplit[1]))
+            if data['training']['preprocess']['flag']:
+                out_files.append("{}_OUT30{}".format(pathsplit[0], '.png'))
+            else:
+                out_files.append("{}_OUT{}".format(pathsplit[0], '.png'))
     elif len(in_files) != len(args.output):
         logging.error("Input files and output files are not of the same length")
         raise SystemExit()
@@ -114,36 +121,7 @@ def get_output_filenames(args):
 
 def mask_to_image(mask):
     #return Image.fromarray((mask / 18 * 255).astype(np.uint8))
-    labels = {
-            0  : [  0,  0,  0],
-            1  : [128, 64,128],
-            2  : [244, 35,232],
-            3  : [250,170,160],
-            4  : [230,150,140],
-            5  : [ 70, 70, 70],
-            6  : [102,102,156],
-            7  : [190,153,153],
-            8  : [180,165,180],
-            9  : [150,100,100],
-            10 : [150,120, 90],
-            11 : [153,153,153],
-            12 : [153,153,153],
-            13 : [250,170, 30],
-            14 : [220,220,  0],
-            15 : [107,142, 35],
-            16 : [152,251,152],
-            17 : [ 70,130,180],
-            18 : [255,  0,  0],
-            19 : [  0,  0,142],
-            20 : [  0,  0, 70],
-            21 : [  0, 60,100],
-            22 : [  0,  0, 90],
-            23 : [  0,  0,110],
-            24 : [  0, 80,100],
-            25 : [  0,  0,230],
-            26 : [119, 11, 32],
-            27 : [  0,  0,142]
-        }
+    labels = data['class']['colors']
     pred_img = np.zeros((mask.shape[0], mask.shape[1], 3))
     for x in range(mask.shape[0]):
         for y in range(mask.shape[1]):
@@ -156,7 +134,7 @@ if __name__ == "__main__":
     in_files = args.input
     out_files = get_output_filenames(args)
 
-    net = UNet(n_channels=3, n_classes=28)
+    net = UNet(n_channels=3, n_classes=24)
 
     logging.info("Loading model {}".format(args.model))
 
@@ -169,8 +147,11 @@ if __name__ == "__main__":
 
     for i, fn in enumerate(in_files):
         logging.info("\nPredicting image {} ...".format(fn))
-
-        img = np.array(Image.open(fn))
+        print(fn)
+        if data['training']['preprocess']['flag']:
+            img = np.array(Image.open(fn).convert('RGB'))
+        else:
+            img = np.load(fn)
 
         mask = predict_img(net=net,
                            full_img=img,
